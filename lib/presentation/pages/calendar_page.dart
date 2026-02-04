@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../data/models/event_model.dart';
 import '../providers/event_provider.dart';
@@ -62,82 +63,205 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     final currentEvents = _selectedDay != null
         ? _getEventsForDay(_selectedDay!)
         : <EventModel>[];
+    final theme = Theme.of(context);
+    final today = DateFormat('EEEE, d MMMM').format(DateTime.now());
 
     return Scaffold(
-      appBar: AppBar(title: const Text('My Calendar'), centerTitle: true),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addEvent,
-        child: const Icon(Icons.add),
-      ),
       body: eventsAsync.when(
         data: (allEvents) {
-          // Responsive Layout
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              if (constraints.maxWidth >= 800) {
-                // Desktop / Wide Tablet
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: CalendarWidget(
-                        focusedDay: _focusedDay,
-                        selectedDay: _selectedDay,
-                        events: ref.watch(eventsMapProvider),
-                        onDaySelected: _onDaySelected,
-                        onPageChanged: (focusedDay) {
-                          _focusedDay = focusedDay;
-                        },
-                      ),
-                    ),
-                    const VerticalDivider(width: 1),
-                    Expanded(
-                      flex: 3,
-                      child: Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Text(
-                              'Events for ${_selectedDay?.toString().split(' ')[0]}',
-                              style: Theme.of(context).textTheme.headlineSmall,
+          return SafeArea(
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    children: [
+                      // Custom Header
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'My Calendar',
+                                  style: theme.textTheme.headlineLarge
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: theme.colorScheme.onSurface,
+                                      ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  today,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    color: theme.colorScheme.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          Expanded(
-                            child: EventListWidget(
-                              events: currentEvents,
-                              onDelete: _deleteEvent,
+                            FloatingActionButton.extended(
+                              onPressed: _addEvent,
+                              icon: const Icon(Icons.add, color: Colors.white),
+                              label: const Text(
+                                'New Event',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              backgroundColor: theme.colorScheme.primary,
+                              elevation: 4,
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                );
-              } else {
-                // Mobile
-                return Column(
-                  children: [
-                    CalendarWidget(
-                      focusedDay: _focusedDay,
-                      selectedDay: _selectedDay,
-                      events: ref.watch(eventsMapProvider),
-                      onDaySelected: _onDaySelected,
-                      onPageChanged: (focusedDay) {
-                        _focusedDay = focusedDay;
-                      },
-                    ),
-                    const SizedBox(height: 8.0),
-                    Expanded(
-                      child: EventListWidget(
-                        events: currentEvents,
-                        onDelete: _deleteEvent,
+                      Expanded(
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            if (constraints.maxWidth >= 900) {
+                              // Desktop Layout
+                              return Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    flex: 3,
+                                    child: SingleChildScrollView(
+                                      child: CalendarWidget(
+                                        focusedDay: _focusedDay,
+                                        selectedDay: _selectedDay,
+                                        events: ref.watch(eventsMapProvider),
+                                        onDaySelected: _onDaySelected,
+                                        onPageChanged: (focusedDay) {
+                                          _focusedDay = focusedDay;
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 2,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: theme.colorScheme.surface,
+                                        border: Border(
+                                          left: BorderSide(
+                                            color: theme.dividerColor
+                                                .withValues(alpha: 0.1),
+                                          ),
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.all(24.0),
+                                            child: Text(
+                                              _selectedDay == null
+                                                  ? 'Events'
+                                                  : DateFormat(
+                                                      'd MMMM yyyy',
+                                                    ).format(_selectedDay!),
+                                              style: theme
+                                                  .textTheme
+                                                  .headlineSmall
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: EventListWidget(
+                                              events: currentEvents,
+                                              onDelete: _deleteEvent,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            } else {
+                              // Mobile Layout
+                              return Column(
+                                children: [
+                                  CalendarWidget(
+                                    focusedDay: _focusedDay,
+                                    selectedDay: _selectedDay,
+                                    events: ref.watch(eventsMapProvider),
+                                    onDaySelected: _onDaySelected,
+                                    onPageChanged: (focusedDay) {
+                                      _focusedDay = focusedDay;
+                                    },
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Expanded(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: theme.colorScheme.surface,
+                                        borderRadius:
+                                            const BorderRadius.vertical(
+                                              top: Radius.circular(32),
+                                            ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(
+                                              alpha: 0.05,
+                                            ),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, -5),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.fromLTRB(
+                                              24,
+                                              24,
+                                              24,
+                                              8,
+                                            ),
+                                            child: Text(
+                                              _selectedDay == null
+                                                  ? 'Events'
+                                                  : DateFormat(
+                                                      'd MMMM yyyy',
+                                                    ).format(_selectedDay!),
+                                              style: theme
+                                                  .textTheme
+                                                  .headlineSmall
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: EventListWidget(
+                                              events: currentEvents,
+                                              onDelete: _deleteEvent,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }
+                          },
+                        ),
                       ),
-                    ),
-                  ],
-                );
-              }
-            },
+                    ],
+                  ),
+                ),
+              ],
+            ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
