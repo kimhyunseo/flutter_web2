@@ -1,0 +1,36 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main # 기본 브랜치 이름이 main이 아니라면 수정해주세요 (예: master)
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          # flutter-version: '3.19.0' # 필요한 경우 특정 버전을 지정하세요
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Web
+        # --base-href "/flutter_web2/" 옵션은 리포지토리 이름이 flutter_web2일 때 필요합니다.
+        # 사용자/조직 페이지(예: kimhyunseo.github.io)인 경우 "/" 로 설정해야 합니다.
+        run: flutter build web --base-href "/flutter_web2/" --release
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
